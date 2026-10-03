@@ -2,6 +2,7 @@ package app.workouttracker.ui.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,12 +21,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,6 +45,7 @@ import app.workouttracker.data.DefaultExercises
 import app.workouttracker.data.Exercise
 import app.workouttracker.data.WorkoutDatabase
 import app.workouttracker.reminders.ReminderDialog
+import app.workouttracker.settings.WeightUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -67,6 +73,8 @@ fun SettingsScreen(onClose: () -> Unit) {
     val snackbar = remember { SnackbarHostState() }
     var showReminder by remember { mutableStateOf(false) }
     var confirm by remember { mutableStateOf<ClearKind?>(null) }
+    val unit by app.weightUnit.unit.collectAsState()
+    var switchTo by remember { mutableStateOf<WeightUnit?>(null) }
 
     Scaffold(
         topBar = {
@@ -86,6 +94,21 @@ fun SettingsScreen(onClose: () -> Unit) {
                 headlineContent = { Text("Workout reminder") },
                 supportingContent = { Text("A notification on days you have a workout planned") },
                 trailingContent = { TextButton(onClick = { showReminder = true }) { Text("Change") } },
+            )
+            HorizontalDivider()
+            ListItem(
+                headlineContent = { Text("Weight unit") },
+                trailingContent = {
+                    SingleChoiceSegmentedButtonRow {
+                        WeightUnit.entries.forEachIndexed { i, u ->
+                            SegmentedButton(
+                                selected = u == unit,
+                                onClick = { if (u != unit) switchTo = u },
+                                shape = SegmentedButtonDefaults.itemShape(i, WeightUnit.entries.size),
+                            ) { Text(u.label) }
+                        }
+                    }
+                },
             )
             HorizontalDivider()
             Text(
@@ -112,6 +135,38 @@ fun SettingsScreen(onClose: () -> Unit) {
     }
 
     if (showReminder) ReminderDialog(onDismiss = { showReminder = false })
+
+    switchTo?.let { target ->
+        AlertDialog(
+            onDismissRequest = { switchTo = null },
+            title = { Text("Switch to ${target.label}?") },
+            text = {
+                Text(
+                    "Convert converts every weight you've logged and every template target to ${target.label}, " +
+                        "rounded to 0.1. Keep numbers only changes the label, for when you've been entering ${target.label} already."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    switchTo = null
+                    scope.launch {
+                        convertWeights(app.database, if (target == WeightUnit.KG) LB_TO_KG else 1 / LB_TO_KG)
+                        app.weightUnit.set(target)
+                        snackbar.showSnackbar("Weights converted to ${target.label}")
+                    }
+                }) { Text("Convert") }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = { switchTo = null }) { Text("Cancel") }
+                    TextButton(onClick = {
+                        app.weightUnit.set(target)
+                        switchTo = null
+                    }) { Text("Keep numbers") }
+                }
+            },
+        )
+    }
 
     confirm?.let { kind ->
         ConfirmClearDialog(
@@ -173,6 +228,18 @@ private suspend fun clear(db: WorkoutDatabase, kind: ClearKind) {
                     names.forEach { db.exerciseDao().insert(Exercise(name = it, category = category)) }
                 }
             }
+        }
+    }
+}
+
+private const val LB_TO_KG = 0.45359237
+
+private suspend fun convertWeights(db: WorkoutDatabase, factor: Double) {
+    withContext(Dispatchers.IO) {
+        db.withTransaction {
+            db.sessionDao().scaleSetWeights(factor)
+            db.sessionDao().scaleSessionTargets(factor)
+            db.templateDao().scaleTargets(factor)
         }
     }
 }

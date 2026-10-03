@@ -58,14 +58,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.workouttracker.WorkoutApp
 import app.workouttracker.data.SessionExerciseDetail
 import app.workouttracker.data.SetEntry
+import app.workouttracker.settings.LocalWeightUnit
 import app.workouttracker.ui.plan.ExercisePickerDialog
 import app.workouttracker.ui.plan.formatWeight
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.delay
-
-private const val WEIGHT_STEP = 5.0
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -205,6 +204,7 @@ private fun ExerciseCard(
     onDeleteSet: (SetEntry) -> Unit,
     onRemove: () -> Unit,
 ) {
+    val unit = LocalWeightUnit.current
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -215,12 +215,12 @@ private fun ExerciseCard(
                     }
                 }
             }
-            targetText(item)?.let {
+            targetText(item, unit.label)?.let {
                 Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (lastTime.isNotEmpty()) {
                 Text(
-                    "Last time: " + lastTime.joinToString(", ") { "${formatWeight(it.weight)}×${it.reps}" },
+                    "Last time: " + lastTime.joinToString(", ") { "${formatWeight(it.weight)} ${unit.label} × ${it.reps}" },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -230,7 +230,7 @@ private fun ExerciseCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Set ${set.setNumber}", modifier = Modifier.width(64.dp))
                     Text(
-                        "${formatWeight(set.weight)} × ${set.reps}",
+                        "${formatWeight(set.weight)} ${unit.label} × ${set.reps}",
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.weight(1f),
                     )
@@ -245,12 +245,12 @@ private fun ExerciseCard(
                 modifier = Modifier.padding(top = 12.dp),
             ) {
                 Stepper(
-                    label = "Weight",
+                    label = "Weight (${unit.label})",
                     value = entry.weight,
                     decimal = true,
                     onValue = { onEntry(entry.copy(weight = it)) },
                     onStep = { dir ->
-                        val next = ((entry.weight.toDoubleOrNull() ?: 0.0) + dir * WEIGHT_STEP).coerceAtLeast(0.0)
+                        val next = ((entry.weight.toDoubleOrNull() ?: 0.0) + dir * unit.step).coerceAtLeast(0.0)
                         onEntry(entry.copy(weight = formatWeight(next)))
                     },
                     modifier = Modifier.weight(1f),
@@ -278,10 +278,10 @@ private fun ExerciseCard(
     }
 }
 
-private fun targetText(item: SessionExerciseDetail): String? {
+private fun targetText(item: SessionExerciseDetail, unit: String): String? {
     val sets = item.targetSets ?: return null
     val reps = item.targetReps ?: return null
-    val weight = item.targetWeight?.let { " @ ${formatWeight(it)}" }.orEmpty()
+    val weight = item.targetWeight?.let { " @ ${formatWeight(it)} $unit" }.orEmpty()
     return "Target: $sets × $reps$weight"
 }
 

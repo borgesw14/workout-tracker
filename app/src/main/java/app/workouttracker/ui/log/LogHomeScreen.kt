@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.workouttracker.WorkoutApp
+import app.workouttracker.settings.LocalWeightUnit
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -49,6 +50,7 @@ fun LogHomeScreen(onOpenSession: (Long) -> Unit, onOpenSettings: () -> Unit) {
     val planned by vm.plannedToday.collectAsStateWithLifecycle()
     val templates by vm.templates.collectAsStateWithLifecycle()
     val history by vm.history.collectAsStateWithLifecycle()
+    val unit = LocalWeightUnit.current
 
     Scaffold(
         topBar = {
@@ -124,7 +126,7 @@ fun LogHomeScreen(onOpenSession: (Long) -> Unit, onOpenSettings: () -> Unit) {
                         headlineContent = { Text(s.name) },
                         supportingContent = {
                             val sets = if (s.setCount == 1) "1 set" else "${s.setCount} sets"
-                            Text("${formatDate(s.startedAt)} · $sets · ${"%,d".format(s.volume.roundToLong())} volume")
+                            Text("${formatDate(s.startedAt)} · $sets · ${"%,d".format(s.volume.roundToLong())} ${unit.label} lifted")
                         },
                         modifier = Modifier.clickable { onOpenSession(s.id) },
                     )

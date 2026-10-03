@@ -45,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.workouttracker.WorkoutApp
 import app.workouttracker.data.Exercise
+import app.workouttracker.settings.LocalWeightUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -167,7 +168,7 @@ private fun SlotCard(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(end = 12.dp)) {
                 NumberField("Sets", slot.sets, Modifier.weight(1f)) { onChange(slot.copy(sets = it)) }
                 NumberField("Reps", slot.reps, Modifier.weight(1f)) { onChange(slot.copy(reps = it)) }
-                NumberField("Weight", slot.weight, Modifier.weight(1.3f), decimal = true) {
+                NumberField("Weight (${LocalWeightUnit.current.label})", slot.weight, Modifier.weight(1.3f), decimal = true) {
                     onChange(slot.copy(weight = it))
                 }
             }

@@ -55,6 +55,9 @@ interface TemplateDao {
     @Insert
     suspend fun insertExercises(items: List<TemplateExercise>)
 
+    @Query("UPDATE TemplateExercise SET targetWeight = ROUND(targetWeight * :factor, 1) WHERE targetWeight IS NOT NULL")
+    suspend fun scaleTargets(factor: Double)
+
     @Query("DELETE FROM TemplateExercise WHERE templateId = :templateId")
     suspend fun clearExercises(templateId: Long)
 
@@ -171,6 +174,12 @@ interface SessionDao {
 
     @Query("DELETE FROM SetEntry WHERE id = :id")
     suspend fun deleteSet(id: Long)
+
+    @Query("UPDATE SetEntry SET weight = ROUND(weight * :factor, 1)")
+    suspend fun scaleSetWeights(factor: Double)
+
+    @Query("UPDATE SessionExercise SET targetWeight = ROUND(targetWeight * :factor, 1) WHERE targetWeight IS NOT NULL")
+    suspend fun scaleSessionTargets(factor: Double)
 
     @Query("UPDATE SetEntry SET setNumber = :setNumber WHERE id = :id")
     suspend fun renumberSet(id: Long, setNumber: Int)
