@@ -10,6 +10,9 @@ import androidx.room.PrimaryKey
  * so the schema needs no type converters.
  */
 
+/** The muscle groups offered when adding an exercise; the seeded library uses the same names. */
+val MuscleGroups = listOf("Chest", "Back", "Legs", "Shoulders", "Arms", "Core", "Full Body", "Cardio", "Other")
+
 @Entity(indices = [Index(value = ["name"], unique = true)])
 data class Exercise(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
