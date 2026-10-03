@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
@@ -76,7 +77,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlanScreen(onEditTemplate: (Long) -> Unit) {
+fun PlanScreen(onEditTemplate: (Long) -> Unit, onOpenSettings: () -> Unit) {
     val app = LocalContext.current.applicationContext as WorkoutApp
     val vm: PlanViewModel = viewModel { PlanViewModel(app.database) }
     var tab by rememberSaveable { mutableIntStateOf(0) }
@@ -89,6 +90,9 @@ fun PlanScreen(onEditTemplate: (Long) -> Unit) {
                 actions = {
                     IconButton(onClick = { showReminder = true }) {
                         Icon(Icons.Outlined.Notifications, contentDescription = "Workout reminder")
+                    }
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(Icons.Outlined.Settings, contentDescription = "Settings")
                     }
                 },
             )

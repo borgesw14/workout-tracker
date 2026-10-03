@@ -36,19 +36,20 @@ abstract class WorkoutDatabase : RoomDatabase() {
     }
 }
 
+/** The starter exercise library, by muscle group. */
+val DefaultExercises = listOf(
+    "Chest" to listOf("Bench Press", "Incline Dumbbell Press", "Push-Up"),
+    "Back" to listOf("Deadlift", "Barbell Row", "Pull-Up", "Lat Pulldown"),
+    "Legs" to listOf("Back Squat", "Romanian Deadlift", "Leg Press", "Walking Lunge"),
+    "Shoulders" to listOf("Overhead Press", "Lateral Raise"),
+    "Arms" to listOf("Barbell Curl", "Tricep Pushdown"),
+    "Core" to listOf("Plank", "Hanging Leg Raise"),
+)
+
 /** Fills the exercise library with common lifts the first time the database is created. */
 private object SeedCallback : RoomDatabase.Callback() {
-    private val defaults = listOf(
-        "Chest" to listOf("Bench Press", "Incline Dumbbell Press", "Push-Up"),
-        "Back" to listOf("Deadlift", "Barbell Row", "Pull-Up", "Lat Pulldown"),
-        "Legs" to listOf("Back Squat", "Romanian Deadlift", "Leg Press", "Walking Lunge"),
-        "Shoulders" to listOf("Overhead Press", "Lateral Raise"),
-        "Arms" to listOf("Barbell Curl", "Tricep Pushdown"),
-        "Core" to listOf("Plank", "Hanging Leg Raise"),
-    )
-
     override fun onCreate(db: SupportSQLiteDatabase) {
-        defaults.forEach { (category, names) ->
+        DefaultExercises.forEach { (category, names) ->
             names.forEach { name ->
                 db.execSQL(
                     "INSERT INTO Exercise (name, category, notes) VALUES (?, ?, '')",

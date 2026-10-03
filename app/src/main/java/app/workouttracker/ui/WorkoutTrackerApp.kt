@@ -31,6 +31,7 @@ import app.workouttracker.ui.log.LogHomeScreen
 import app.workouttracker.ui.log.SessionScreen
 import app.workouttracker.ui.plan.PlanScreen
 import app.workouttracker.ui.plan.TemplateEditorScreen
+import app.workouttracker.ui.settings.SettingsScreen
 import app.workouttracker.ui.stats.StatsScreen
 
 private enum class Tab(val route: String, val label: String, val icon: ImageVector) {
@@ -76,7 +77,10 @@ fun WorkoutTrackerApp() {
             // Nested so the Plan tab stays highlighted while editing a template.
             navigation(startDestination = "plan/home", route = Tab.Plan.route) {
                 composable("plan/home") {
-                    PlanScreen(onEditTemplate = { id -> navController.navigate("plan/template/$id") })
+                    PlanScreen(
+                        onEditTemplate = { id -> navController.navigate("plan/template/$id") },
+                        onOpenSettings = { navController.navigate("settings") },
+                    )
                 }
                 composable(
                     "plan/template/{id}",
@@ -90,7 +94,10 @@ fun WorkoutTrackerApp() {
             }
             navigation(startDestination = "log/home", route = Tab.Log.route) {
                 composable("log/home") {
-                    LogHomeScreen(onOpenSession = { id -> navController.navigate("log/session/$id") })
+                    LogHomeScreen(
+                        onOpenSession = { id -> navController.navigate("log/session/$id") },
+                        onOpenSettings = { navController.navigate("settings") },
+                    )
                 }
                 composable(
                     "log/session/{id}",
@@ -103,6 +110,7 @@ fun WorkoutTrackerApp() {
                 }
             }
             composable(Tab.Exercises.route) { ExercisesScreen() }
+            composable("settings") { SettingsScreen(onClose = { navController.popBackStack() }) }
             composable(Tab.Stats.route) { StatsScreen() }
         }
     }

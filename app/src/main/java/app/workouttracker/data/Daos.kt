@@ -90,6 +90,9 @@ interface ScheduleDao {
     @Query("UPDATE ScheduledWorkout SET status = :status WHERE id = :id")
     suspend fun setStatus(id: Long, status: String)
 
+    @Query("UPDATE ScheduledWorkout SET status = 'PLANNED' WHERE status = 'COMPLETED'")
+    suspend fun clearCompleted()
+
     @Query("DELETE FROM ScheduledWorkout WHERE id = :id")
     suspend fun delete(id: Long)
 }
@@ -152,6 +155,10 @@ interface SessionDao {
 
     @Query("DELETE FROM WorkoutSession WHERE id = :id")
     suspend fun delete(id: Long)
+
+    /** Deletes every logged workout; their sets and exercises go with them. */
+    @Query("DELETE FROM WorkoutSession")
+    suspend fun deleteAll()
 
     @Insert
     suspend fun insertExercises(items: List<SessionExercise>)
