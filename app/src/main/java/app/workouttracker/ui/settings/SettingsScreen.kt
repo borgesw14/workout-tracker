@@ -142,8 +142,8 @@ fun SettingsScreen(onClose: () -> Unit) {
             title = { Text("Switch to ${target.label}?") },
             text = {
                 Text(
-                    "Convert converts every weight you've logged and every template target to ${target.label}, " +
-                        "rounded to 0.1. Keep numbers only changes the label, for when you've been entering ${target.label} already."
+                    "Convert changes every logged weight and template target to ${target.label}, rounded to 0.1. " +
+                        "Keep numbers only changes the label. Use it if you've been entering ${target.label} all along."
                 )
             },
             confirmButton = {
