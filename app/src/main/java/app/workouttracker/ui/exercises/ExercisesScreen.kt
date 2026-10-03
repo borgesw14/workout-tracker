@@ -92,7 +92,7 @@ fun ExercisesScreen() {
         AlertDialog(
             onDismissRequest = { pendingDelete = null },
             title = { Text("Delete ${exercise.name}?") },
-            text = { Text("Every set you've logged for this exercise is deleted too.") },
+            text = { Text("It's also removed from your templates, and every set you've logged for it is deleted.") },
             confirmButton = {
                 TextButton(onClick = { vm.delete(exercise); pendingDelete = null }) { Text("Delete") }
             },

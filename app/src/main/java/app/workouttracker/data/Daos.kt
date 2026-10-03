@@ -25,14 +25,32 @@ interface ExerciseDao {
 
 @Dao
 interface TemplateDao {
-    @Query("SELECT * FROM WorkoutTemplate ORDER BY name")
-    fun observeAll(): Flow<List<WorkoutTemplate>>
+    @Query(
+        """
+        SELECT t.id, t.name, t.notes,
+            (SELECT COUNT(*) FROM TemplateExercise te WHERE te.templateId = t.id) AS exerciseCount
+        FROM WorkoutTemplate t ORDER BY t.name COLLATE NOCASE
+        """
+    )
+    fun observeSummaries(): Flow<List<TemplateSummary>>
 
-    @Query("SELECT * FROM TemplateExercise WHERE templateId = :templateId ORDER BY position")
-    fun observeExercises(templateId: Long): Flow<List<TemplateExercise>>
+    @Query("SELECT * FROM WorkoutTemplate WHERE id = :id")
+    suspend fun get(id: Long): WorkoutTemplate?
+
+    @Query(
+        """
+        SELECT te.exerciseId, e.name AS exerciseName, te.targetSets, te.targetReps, te.targetWeight
+        FROM TemplateExercise te JOIN Exercise e ON e.id = te.exerciseId
+        WHERE te.templateId = :templateId ORDER BY te.position
+        """
+    )
+    suspend fun exercisesFor(templateId: Long): List<TemplateExerciseDetail>
 
     @Insert
     suspend fun insert(template: WorkoutTemplate): Long
+
+    @Update
+    suspend fun update(template: WorkoutTemplate)
 
     @Insert
     suspend fun insertExercises(items: List<TemplateExercise>)
@@ -40,23 +58,40 @@ interface TemplateDao {
     @Query("DELETE FROM TemplateExercise WHERE templateId = :templateId")
     suspend fun clearExercises(templateId: Long)
 
-    @Delete
-    suspend fun delete(template: WorkoutTemplate)
+    @Query("DELETE FROM WorkoutTemplate WHERE id = :id")
+    suspend fun delete(id: Long)
 }
 
 @Dao
 interface ScheduleDao {
-    @Query("SELECT * FROM ScheduledWorkout WHERE epochDay BETWEEN :fromDay AND :toDay ORDER BY epochDay")
-    fun observeRange(fromDay: Long, toDay: Long): Flow<List<ScheduledWorkout>>
+    @Query(
+        """
+        SELECT s.id, s.templateId, s.epochDay, s.status, t.name AS templateName
+        FROM ScheduledWorkout s JOIN WorkoutTemplate t ON t.id = s.templateId
+        WHERE s.epochDay BETWEEN :fromDay AND :toDay
+        ORDER BY s.epochDay, t.name COLLATE NOCASE
+        """
+    )
+    fun observeRange(fromDay: Long, toDay: Long): Flow<List<ScheduledItem>>
+
+    @Query(
+        """
+        SELECT s.id, s.templateId, s.epochDay, s.status, t.name AS templateName
+        FROM ScheduledWorkout s JOIN WorkoutTemplate t ON t.id = s.templateId
+        WHERE s.epochDay = :day AND s.status = 'PLANNED'
+        ORDER BY t.name COLLATE NOCASE
+        """
+    )
+    suspend fun plannedOn(day: Long): List<ScheduledItem>
 
     @Insert
-    suspend fun insert(item: ScheduledWorkout): Long
+    suspend fun insertAll(items: List<ScheduledWorkout>)
 
     @Query("UPDATE ScheduledWorkout SET status = :status WHERE id = :id")
     suspend fun setStatus(id: Long, status: String)
 
-    @Delete
-    suspend fun delete(item: ScheduledWorkout)
+    @Query("DELETE FROM ScheduledWorkout WHERE id = :id")
+    suspend fun delete(id: Long)
 }
 
 @Dao

@@ -18,12 +18,16 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.navigation
+import androidx.navigation.navArgument
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import app.workouttracker.ui.exercises.ExercisesScreen
 import app.workouttracker.ui.log.LogScreen
 import app.workouttracker.ui.plan.PlanScreen
+import app.workouttracker.ui.plan.TemplateEditorScreen
 import app.workouttracker.ui.stats.StatsScreen
 
 private enum class Tab(val route: String, val label: String, val icon: ImageVector) {
@@ -64,7 +68,21 @@ fun WorkoutTrackerApp() {
             startDestination = Tab.Plan.route,
             modifier = Modifier.padding(padding),
         ) {
-            composable(Tab.Plan.route) { PlanScreen() }
+            // Nested so the Plan tab stays highlighted while editing a template.
+            navigation(startDestination = "plan/home", route = Tab.Plan.route) {
+                composable("plan/home") {
+                    PlanScreen(onEditTemplate = { id -> navController.navigate("plan/template/$id") })
+                }
+                composable(
+                    "plan/template/{id}",
+                    arguments = listOf(navArgument("id") { type = NavType.LongType }),
+                ) { entry ->
+                    TemplateEditorScreen(
+                        templateId = entry.arguments?.getLong("id") ?: 0L,
+                        onClose = { navController.popBackStack() },
+                    )
+                }
+            }
             composable(Tab.Log.route) { LogScreen() }
             composable(Tab.Exercises.route) { ExercisesScreen() }
             composable(Tab.Stats.route) { StatsScreen() }

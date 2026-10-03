@@ -18,6 +18,6 @@ Open the folder in Android Studio, or run `./gradlew assembleDebug` with the And
 ## Roadmap
 
 1. App setup, data model, exercise library (done)
-2. Workout templates and a schedule calendar with reminders
+2. Workout templates and a schedule calendar with reminders (done)
 3. Logging screen with rest timer, prefilled from last time
 4. Analytics: weight over time, estimated 1RM, weekly volume, planned vs completed
