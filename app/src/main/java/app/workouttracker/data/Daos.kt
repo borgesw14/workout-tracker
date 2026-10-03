@@ -96,14 +96,53 @@ interface ScheduleDao {
 
 @Dao
 interface SessionDao {
-    @Query("SELECT * FROM WorkoutSession ORDER BY startedAt DESC")
-    fun observeAll(): Flow<List<WorkoutSession>>
+    @Query("SELECT * FROM WorkoutSession WHERE finishedAt IS NULL ORDER BY startedAt DESC LIMIT 1")
+    fun observeActive(): Flow<WorkoutSession?>
 
-    @Query("SELECT * FROM SetEntry WHERE sessionId = :sessionId ORDER BY loggedAt")
+    @Query("SELECT * FROM WorkoutSession WHERE id = :id")
+    fun observe(id: Long): Flow<WorkoutSession?>
+
+    @Query("SELECT * FROM WorkoutSession WHERE id = :id")
+    suspend fun get(id: Long): WorkoutSession?
+
+    @Query(
+        """
+        SELECT s.id, s.name, s.startedAt, s.finishedAt,
+            COUNT(e.id) AS setCount, COALESCE(SUM(e.weight * e.reps), 0) AS volume
+        FROM WorkoutSession s LEFT JOIN SetEntry e ON e.sessionId = s.id
+        WHERE s.finishedAt IS NOT NULL
+        GROUP BY s.id ORDER BY s.startedAt DESC LIMIT 100
+        """
+    )
+    fun observeHistory(): Flow<List<SessionSummary>>
+
+    @Query(
+        """
+        SELECT se.id, se.exerciseId, e.name AS exerciseName, se.position,
+            se.targetSets, se.targetReps, se.targetWeight
+        FROM SessionExercise se JOIN Exercise e ON e.id = se.exerciseId
+        WHERE se.sessionId = :sessionId ORDER BY se.position
+        """
+    )
+    fun observeExercises(sessionId: Long): Flow<List<SessionExerciseDetail>>
+
+    @Query("SELECT * FROM SetEntry WHERE sessionId = :sessionId ORDER BY setNumber")
     fun observeSets(sessionId: Long): Flow<List<SetEntry>>
 
-    @Query("SELECT * FROM SetEntry WHERE exerciseId = :exerciseId ORDER BY loggedAt")
-    fun observeSetsForExercise(exerciseId: Long): Flow<List<SetEntry>>
+    /** The sets from the most recent other session that included this exercise. */
+    @Query(
+        """
+        SELECT * FROM SetEntry WHERE exerciseId = :exerciseId AND sessionId = (
+            SELECT sessionId FROM SetEntry
+            WHERE exerciseId = :exerciseId AND sessionId != :excludeSessionId
+            ORDER BY loggedAt DESC LIMIT 1
+        ) ORDER BY setNumber
+        """
+    )
+    suspend fun lastTimeSets(exerciseId: Long, excludeSessionId: Long): List<SetEntry>
+
+    @Query("SELECT COALESCE(MAX(position), -1) FROM SessionExercise WHERE sessionId = :sessionId")
+    suspend fun maxPosition(sessionId: Long): Int
 
     @Insert
     suspend fun insert(session: WorkoutSession): Long
@@ -111,9 +150,24 @@ interface SessionDao {
     @Update
     suspend fun update(session: WorkoutSession)
 
+    @Query("DELETE FROM WorkoutSession WHERE id = :id")
+    suspend fun delete(id: Long)
+
+    @Insert
+    suspend fun insertExercises(items: List<SessionExercise>)
+
+    @Query("DELETE FROM SessionExercise WHERE id = :id")
+    suspend fun deleteExercise(id: Long)
+
     @Insert
     suspend fun insertSet(set: SetEntry): Long
 
-    @Delete
-    suspend fun deleteSet(set: SetEntry)
+    @Query("DELETE FROM SetEntry WHERE id = :id")
+    suspend fun deleteSet(id: Long)
+
+    @Query("UPDATE SetEntry SET setNumber = :setNumber WHERE id = :id")
+    suspend fun renumberSet(id: Long, setNumber: Int)
+
+    @Query("SELECT * FROM SetEntry WHERE sessionId = :sessionId AND exerciseId = :exerciseId ORDER BY setNumber")
+    suspend fun setsFor(sessionId: Long, exerciseId: Long): List<SetEntry>
 }

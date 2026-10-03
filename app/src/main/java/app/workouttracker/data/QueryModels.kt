@@ -25,3 +25,24 @@ data class ScheduledItem(
     val status: String,
     val templateName: String,
 )
+
+/** A finished session with its totals, for the history list. */
+data class SessionSummary(
+    val id: Long,
+    val name: String,
+    val startedAt: Long,
+    val finishedAt: Long?,
+    val setCount: Int,
+    val volume: Double,
+)
+
+/** An exercise in a session joined with its name. */
+data class SessionExerciseDetail(
+    val id: Long,
+    val exerciseId: Long,
+    val exerciseName: String,
+    val position: Int,
+    val targetSets: Int?,
+    val targetReps: Int?,
+    val targetWeight: Double?,
+)

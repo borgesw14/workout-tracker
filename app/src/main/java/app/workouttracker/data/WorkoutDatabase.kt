@@ -14,8 +14,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ScheduledWorkout::class,
         WorkoutSession::class,
         SetEntry::class,
+        SessionExercise::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = false,
 )
 abstract class WorkoutDatabase : RoomDatabase() {
@@ -30,6 +31,7 @@ abstract class WorkoutDatabase : RoomDatabase() {
         fun build(context: Context): WorkoutDatabase =
             Room.databaseBuilder(context, WorkoutDatabase::class.java, NAME)
                 .addCallback(SeedCallback)
+                .addMigrations(MIGRATION_1_2)
                 .build()
     }
 }

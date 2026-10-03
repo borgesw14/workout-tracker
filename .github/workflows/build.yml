@@ -21,6 +21,17 @@ jobs:
         run: |
           set -o pipefail
           ./gradlew assembleDebug 2>&1 | tee build.log
+      - name: Check database migrations match Room's schema
+        run: |
+          # Every CREATE statement Room generates for a table added after v1 must appear verbatim in Migrations.kt.
+          gen=$(grep -rhoE 'CREATE (TABLE|INDEX) IF NOT EXISTS `(index_)?SessionExercise[^"]*' app/build/generated/ksp)
+          test -n "$gen"
+          while IFS= read -r stmt; do
+            if ! grep -qF "$stmt" app/src/main/java/app/workouttracker/data/Migrations.kt; then
+              echo "::error title=Migration mismatch::Room expects: $stmt"
+              exit 1
+            fi
+          done <<< "$gen"
       - name: Surface build errors
         if: failure()
         run: |

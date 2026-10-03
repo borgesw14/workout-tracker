@@ -78,6 +78,24 @@ data class WorkoutSession(
     val finishedAt: Long? = null,
 )
 
+/** An exercise added to a workout session, with the template's targets when it came from one. */
+@Entity(
+    foreignKeys = [
+        ForeignKey(WorkoutSession::class, ["id"], ["sessionId"], onDelete = ForeignKey.CASCADE),
+        ForeignKey(Exercise::class, ["id"], ["exerciseId"], onDelete = ForeignKey.CASCADE),
+    ],
+    indices = [Index("sessionId"), Index("exerciseId")],
+)
+data class SessionExercise(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val sessionId: Long,
+    val exerciseId: Long,
+    val position: Int,
+    val targetSets: Int? = null,
+    val targetReps: Int? = null,
+    val targetWeight: Double? = null,
+)
+
 /** One logged set. */
 @Entity(
     foreignKeys = [

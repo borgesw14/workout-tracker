@@ -1,5 +1,7 @@
 package app.workouttracker.ui
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -25,7 +27,8 @@ import androidx.navigation.navArgument
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import app.workouttracker.ui.exercises.ExercisesScreen
-import app.workouttracker.ui.log.LogScreen
+import app.workouttracker.ui.log.LogHomeScreen
+import app.workouttracker.ui.log.SessionScreen
 import app.workouttracker.ui.plan.PlanScreen
 import app.workouttracker.ui.plan.TemplateEditorScreen
 import app.workouttracker.ui.stats.StatsScreen
@@ -44,6 +47,8 @@ fun WorkoutTrackerApp() {
     val current = backStack?.destination
 
     Scaffold(
+        // Each screen's own top bar handles the status bar; this only pads for the bottom navigation.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             NavigationBar {
                 Tab.entries.forEach { tab ->
@@ -66,7 +71,7 @@ fun WorkoutTrackerApp() {
         NavHost(
             navController = navController,
             startDestination = Tab.Plan.route,
-            modifier = Modifier.padding(padding),
+            modifier = Modifier.padding(padding).consumeWindowInsets(padding),
         ) {
             // Nested so the Plan tab stays highlighted while editing a template.
             navigation(startDestination = "plan/home", route = Tab.Plan.route) {
@@ -83,7 +88,20 @@ fun WorkoutTrackerApp() {
                     )
                 }
             }
-            composable(Tab.Log.route) { LogScreen() }
+            navigation(startDestination = "log/home", route = Tab.Log.route) {
+                composable("log/home") {
+                    LogHomeScreen(onOpenSession = { id -> navController.navigate("log/session/$id") })
+                }
+                composable(
+                    "log/session/{id}",
+                    arguments = listOf(navArgument("id") { type = NavType.LongType }),
+                ) { entry ->
+                    SessionScreen(
+                        sessionId = entry.arguments?.getLong("id") ?: 0L,
+                        onClose = { navController.popBackStack() },
+                    )
+                }
+            }
             composable(Tab.Exercises.route) { ExercisesScreen() }
             composable(Tab.Stats.route) { StatsScreen() }
         }

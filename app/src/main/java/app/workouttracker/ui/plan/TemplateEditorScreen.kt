@@ -195,7 +195,7 @@ private fun NumberField(
 }
 
 @Composable
-private fun ExercisePickerDialog(library: List<Exercise>, onPick: (Exercise) -> Unit, onDismiss: () -> Unit) {
+internal fun ExercisePickerDialog(library: List<Exercise>, onPick: (Exercise) -> Unit, onDismiss: () -> Unit) {
     var query by remember { mutableStateOf("") }
     val shown = library.filter { it.name.contains(query.trim(), ignoreCase = true) }
     AlertDialog(

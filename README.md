@@ -19,6 +19,6 @@ Open the folder in Android Studio, or run `./gradlew assembleDebug` with the And
 
 1. App setup, data model, exercise library (done)
 2. Workout templates and a schedule calendar with reminders (done)
-3. Logging screen with rest timer, prefilled from last time
+3. Logging screen with rest timer, prefilled from last time (done)
 4. Analytics: weight over time, estimated 1RM, weekly volume, planned vs completed
 5. Help tab: a short guide to using each part of the app
