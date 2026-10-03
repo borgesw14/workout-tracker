@@ -6,7 +6,10 @@ Kotlin, Jetpack Compose and Material 3, with a Room database stored on the phone
 
 ## Install on your phone
 
-Every push builds a debug APK in GitHub Actions. Open the latest **Build APK** run, download the `workout-tracker-debug-apk` artifact, unzip it, and open `app-debug.apk` on your phone (allow installs from that source when Android asks).
+Every push to `main` builds the app and attaches it to the **Latest build** release. On your phone, open
+https://github.com/borgesw14/workout-tracker/releases/latest, tap `workout-tracker.apk`, and allow installs from your browser when Android asks. New builds install over the old one and keep your data.
+
+The APK is signed with the debug key in `app/signing/`, which is committed on purpose so every build shares one key. Only install APKs from this repo's releases.
 
 ## Build locally
 
