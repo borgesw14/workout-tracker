@@ -46,3 +46,18 @@ data class SessionExerciseDetail(
     val targetReps: Int?,
     val targetWeight: Double?,
 )
+
+/** One logged set of an exercise, with when its workout started. */
+data class ExerciseSetPoint(
+    val sessionId: Long,
+    val startedAt: Long,
+    val weight: Double,
+    val reps: Int,
+)
+
+/** Total weight × reps for one finished workout. */
+data class SessionVolume(
+    val sessionId: Long,
+    val startedAt: Long,
+    val volume: Double,
+)

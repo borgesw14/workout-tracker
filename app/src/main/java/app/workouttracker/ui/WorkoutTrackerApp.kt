@@ -111,7 +111,7 @@ fun WorkoutTrackerApp() {
             }
             composable(Tab.Exercises.route) { ExercisesScreen() }
             composable("settings") { SettingsScreen(onClose = { navController.popBackStack() }) }
-            composable(Tab.Stats.route) { StatsScreen() }
+            composable(Tab.Stats.route) { StatsScreen(onOpenSettings = { navController.navigate("settings") }) }
         }
     }
 }

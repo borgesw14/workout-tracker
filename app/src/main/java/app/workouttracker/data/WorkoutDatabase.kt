@@ -24,6 +24,7 @@ abstract class WorkoutDatabase : RoomDatabase() {
     abstract fun templateDao(): TemplateDao
     abstract fun scheduleDao(): ScheduleDao
     abstract fun sessionDao(): SessionDao
+    abstract fun statsDao(): StatsDao
 
     companion object {
         const val NAME = "workouts.db"

@@ -187,3 +187,36 @@ interface SessionDao {
     @Query("SELECT * FROM SetEntry WHERE sessionId = :sessionId AND exerciseId = :exerciseId ORDER BY setNumber")
     suspend fun setsFor(sessionId: Long, exerciseId: Long): List<SetEntry>
 }
+
+@Dao
+interface StatsDao {
+    @Query(
+        """
+        SELECT DISTINCT e.* FROM Exercise e
+        JOIN SetEntry s ON s.exerciseId = e.id
+        JOIN WorkoutSession w ON w.id = s.sessionId AND w.finishedAt IS NOT NULL
+        ORDER BY e.name COLLATE NOCASE
+        """
+    )
+    fun observeLoggedExercises(): Flow<List<Exercise>>
+
+    @Query(
+        """
+        SELECT w.id AS sessionId, w.startedAt, s.weight, s.reps FROM SetEntry s
+        JOIN WorkoutSession w ON w.id = s.sessionId
+        WHERE s.exerciseId = :exerciseId AND w.finishedAt IS NOT NULL
+        ORDER BY w.startedAt
+        """
+    )
+    fun observeSetsForExercise(exerciseId: Long): Flow<List<ExerciseSetPoint>>
+
+    @Query(
+        """
+        SELECT w.id AS sessionId, w.startedAt, COALESCE(SUM(s.weight * s.reps), 0) AS volume
+        FROM WorkoutSession w LEFT JOIN SetEntry s ON s.sessionId = w.id
+        WHERE w.finishedAt IS NOT NULL AND w.startedAt >= :fromMillis
+        GROUP BY w.id ORDER BY w.startedAt
+        """
+    )
+    fun observeSessionVolumes(fromMillis: Long): Flow<List<SessionVolume>>
+}
