@@ -1,5 +1,8 @@
 package app.workouttracker.ui.settings
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -41,11 +45,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.room.withTransaction
 import app.workouttracker.WorkoutApp
+import app.workouttracker.data.Backup
 import app.workouttracker.data.DefaultExercises
 import app.workouttracker.data.Exercise
 import app.workouttracker.data.WorkoutDatabase
 import app.workouttracker.reminders.ReminderDialog
 import app.workouttracker.settings.WeightUnit
+import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -75,6 +81,22 @@ fun SettingsScreen(onClose: () -> Unit) {
     var confirm by remember { mutableStateOf<ClearKind?>(null) }
     val unit by app.weightUnit.unit.collectAsState()
     var switchTo by remember { mutableStateOf<WeightUnit?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    var restoreFrom by remember { mutableStateOf<Uri?>(null) }
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+        if (uri != null) {
+            busy = true
+            scope.launch {
+                val message = runCatching { withContext(Dispatchers.IO) { Backup.export(app, uri) } }
+                    .fold({ "Backup saved" }, { "Backup failed: ${it.message}" })
+                busy = false
+                snackbar.showSnackbar(message)
+            }
+        }
+    }
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        restoreFrom = uri
+    }
 
     Scaffold(
         topBar = {
@@ -121,6 +143,23 @@ fun SettingsScreen(onClose: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.padding(horizontal = 16.dp),
             ) {
+                Text(
+                    "To move to a new phone, back up here, send the file to yourself (Drive, email, Quick Share), " +
+                        "then choose Restore on the new phone.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Button(
+                    onClick = { exportLauncher.launch("workout-backup-${LocalDate.now()}.zip") },
+                    enabled = !busy,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Back up to a file") }
+                OutlinedButton(
+                    onClick = { importLauncher.launch(arrayOf("application/zip", "application/octet-stream", "*/*")) },
+                    enabled = !busy,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Restore from a backup") }
+                HorizontalDivider(Modifier.padding(vertical = 8.dp))
                 OutlinedButton(
                     onClick = { confirm = ClearKind.History },
                     modifier = Modifier.fillMaxWidth(),
@@ -135,6 +174,32 @@ fun SettingsScreen(onClose: () -> Unit) {
     }
 
     if (showReminder) ReminderDialog(onDismiss = { showReminder = false })
+
+    restoreFrom?.let { uri ->
+        AlertDialog(
+            onDismissRequest = { restoreFrom = null },
+            title = { Text("Restore this backup?") },
+            text = { Text("Everything on this phone is replaced with the backup, then the app restarts.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        restoreFrom = null
+                        busy = true
+                        scope.launch {
+                            // On success the app restarts, so only failures come back here.
+                            val error = runCatching { withContext(Dispatchers.IO) { Backup.restore(app, uri) } }.exceptionOrNull()
+                            busy = false
+                            snackbar.showSnackbar(
+                                (error as? Backup.InvalidBackup)?.message ?: "Restore failed: ${error?.message}"
+                            )
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) { Text("Replace") }
+            },
+            dismissButton = { TextButton(onClick = { restoreFrom = null }) { Text("Cancel") } },
+        )
+    }
 
     switchTo?.let { target ->
         AlertDialog(

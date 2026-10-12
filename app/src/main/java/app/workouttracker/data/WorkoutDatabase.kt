@@ -16,7 +16,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SetEntry::class,
         SessionExercise::class,
     ],
-    version = 2,
+    version = 2, // Also update Backup.DB_VERSION.
     exportSchema = false,
 )
 abstract class WorkoutDatabase : RoomDatabase() {
